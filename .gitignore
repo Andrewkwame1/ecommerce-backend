@@ -1,0 +1,114 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.sublime-project
+.sublime-workspace
+*.code-workspace
+*.iml
+.project
+.pydevproject
+.settings/
+*.tmproj
+
+# Django
+*.log
+local_settings.py
+/media/
+/staticfiles/
+/static/
+/logs/
+db.sqlite3
+db.sqlite3-journal
+/site_packages/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# Docker
+docker-compose.override.yml
+Dockerfile.local
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+dump.rdb
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# AWS Lambda
+sam-tests/
+
+# OS
+Thumbs.db
+.AppleDouble
+.LSOverride
+._*
+
+# Project specific
+*.bak
+*.backup
+.qodo/
+node_modules/
+dist/
+build/
