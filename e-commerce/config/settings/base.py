@@ -19,7 +19,8 @@ if os.path.exists(env_file):
 # Security settings
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='django-insecure-dev-key-not-for-production')
 DEBUG = env.bool('DEBUG', default=False)
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+# ALLOWED_HOSTS is set by development.py and production.py, not here
+ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = [

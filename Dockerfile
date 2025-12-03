@@ -33,8 +33,9 @@ RUN python manage.py collectstatic --noinput 2>/dev/null || true
 # Expose port
 EXPOSE 8000
 
-# Set production Django settings
-ENV DJANGO_SETTINGS_MODULE=config.settings.production
+# Set production Django settings explicitly
+ENV DJANGO_SETTINGS_MODULE=config.settings.production \
+  RENDER=true
 
 # Default command - run migrations and start gunicorn
 # Using JSON array format to ensure proper signal handling (SIGTERM)

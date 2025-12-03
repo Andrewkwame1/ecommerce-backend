@@ -13,7 +13,7 @@ except ImportError:
     dj_database_url = None
 
 # Override base settings for production
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = False  # ALWAYS False in production - never trust environment variables
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-in-production')
 
 # Parse ALLOWED_HOSTS from environment or use wildcard for cloud deployments
