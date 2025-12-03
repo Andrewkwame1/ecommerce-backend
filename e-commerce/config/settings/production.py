@@ -28,7 +28,7 @@ else:
     # This is safe because we validate with X-Forwarded-Host
     ALLOWED_HOSTS = ['*']
 
-print(f"[PRODUCTION] DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}")
+print(f"[PRODUCTION] DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}, ALLOWED_HOSTS_ENV={ALLOWED_HOSTS_ENV}")
 
 # ===== DATABASE CONFIGURATION =====
 # Check if DATABASE_URL is provided (Render PostgreSQL addon)
@@ -86,7 +86,9 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 
 # ===== SECURITY SETTINGS =====
-SECURE_SSL_REDIRECT = True
+# Don't redirect to HTTPS - let Render's reverse proxy handle it
+SECURE_SSL_REDIRECT = False
+# But trust the X-Forwarded-Proto header from the reverse proxy
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
