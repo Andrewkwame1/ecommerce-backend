@@ -3,18 +3,30 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from django.views.generic import RedirectView
 from .health import healthz, ready, startup
 
+# Simple root view
+@csrf_exempt
+def root_view(request):
+    return JsonResponse({
+        'message': 'E-Commerce API is running',
+        'docs_url': '/api/docs/',
+        'api_v1': '/api/v1/'
+    })
+
 urlpatterns = [
-    path('', RedirectView.as_view(url='/api/docs/', permanent=False)),
-    path('admin/', admin.site.urls),
-    
-    # Health check endpoints for Kubernetes
+    # Health check endpoints (these should be accessed first and don't need authentication)
     path('healthz/', healthz, name='healthz'),
     path('ready/', ready, name='ready'),
     path('startup/', startup, name='startup'),
+    
+    # Root path - simple message instead of redirect
+    path('', root_view, name='root'),
+    
+    path('admin/', admin.site.urls),
     
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
