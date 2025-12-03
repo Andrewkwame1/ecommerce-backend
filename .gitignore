@@ -54,8 +54,8 @@ db.sqlite3
 db.sqlite3-journal
 /site_packages/
 
-# Environment
-.env
+# Environment - .env files should NOT be committed for production
+# But keep placeholder/example files for reference
 .env.local
 .env.*.local
 .env.production.local
@@ -112,3 +112,28 @@ Thumbs.db
 node_modules/
 dist/
 build/
+
+# Additional Docker & Environment
+docker-compose.prod.yml
+.dockerignore
+*.pem
+*.key
+secrets/
+
+# IDE temporary files
+*.tmp
+*.swp~
+
+# Database backups
+*.sql
+*.sql.gz
+
+# IMPORTANT: Keep these files for deployment!
+# Uncomment below if you need to ignore them
+# !docker-compose.yml
+# !Dockerfile
+# !requirements.txt
+# !manage.py
+# !.env.example
+
+
