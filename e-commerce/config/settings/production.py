@@ -11,9 +11,13 @@ from .base import *
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-in-production')
 
-# Parse ALLOWED_HOSTS from environment
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
-ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]
+# Parse ALLOWED_HOSTS from environment or use wildcard for Render
+allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
+if allowed_hosts_str:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')]
+else:
+    # Default to wildcard for cloud deployments
+    ALLOWED_HOSTS = ['*']
 
 # ===== DATABASE CONFIGURATION =====
 # Use PostgreSQL for production
@@ -233,20 +237,3 @@ ADMINS = [
     ('Admin', os.getenv('ADMIN_EMAIL', 'admin@ecommerce.com')),
 ]
 MANAGERS = ADMINS
-
-# ===== ALLOWED HOSTS FOR RAILWAY & RENDER =====
-# Add custom domain from environment
-if 'RAILWAY_DOMAIN' in os.environ:
-    ALLOWED_HOSTS.append(os.getenv('RAILWAY_DOMAIN'))
-
-# Add Render domain if present
-if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
-    ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
-
-# Always allow localhost for debugging
-if 'localhost' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('localhost')
-if '127.0.0.1' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('127.0.0.1')
-
-print(f"Production settings loaded. DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}")
