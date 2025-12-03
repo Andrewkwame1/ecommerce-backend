@@ -25,14 +25,13 @@ RUN pip install --upgrade pip setuptools wheel && \
 COPY e-commerce/ .
 
 # Create necessary directories
-RUN mkdir -p logs media staticfiles && \
-  chmod +x /app/scripts/* 2>/dev/null || true
+RUN mkdir -p logs media staticfiles
 
-# Collect static files (migrations happen at startup via railway_startup.sh)
+# Collect static files
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
 # Expose port
 EXPOSE 8000
 
-# Default command - use startup script for Railway
-CMD ["bash", "scripts/railway_startup.sh"]
+# Default command - run migrations and start gunicorn
+CMD python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 4 --threads 2 --timeout 120
