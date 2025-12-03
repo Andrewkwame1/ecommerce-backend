@@ -25,7 +25,7 @@ RUN pip install --upgrade pip setuptools wheel && \
 COPY e-commerce/ .
 
 # Create necessary directories
-RUN mkdir -p logs media staticfiles
+RUN mkdir -p logs media staticfiles static
 
 # Collect static files
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
@@ -33,5 +33,9 @@ RUN python manage.py collectstatic --noinput 2>/dev/null || true
 # Expose port
 EXPOSE 8000
 
+# Set production Django settings
+ENV DJANGO_SETTINGS_MODULE=config.settings.production
+
 # Default command - run migrations and start gunicorn
-CMD python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 4 --threads 2 --timeout 120
+# Using JSON array format to ensure proper signal handling (SIGTERM)
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 4 --threads 2 --timeout 120"]

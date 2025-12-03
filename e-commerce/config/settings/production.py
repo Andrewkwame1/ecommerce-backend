@@ -234,8 +234,19 @@ ADMINS = [
 ]
 MANAGERS = ADMINS
 
-# ===== ALLOWED HOSTS FOR RAILWAY =====
+# ===== ALLOWED HOSTS FOR RAILWAY & RENDER =====
+# Add custom domain from environment
 if 'RAILWAY_DOMAIN' in os.environ:
     ALLOWED_HOSTS.append(os.getenv('RAILWAY_DOMAIN'))
+
+# Add Render domain if present
+if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
+    ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
+
+# Always allow localhost for debugging
+if 'localhost' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('localhost')
+if '127.0.0.1' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('127.0.0.1')
 
 print(f"Production settings loaded. DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}")

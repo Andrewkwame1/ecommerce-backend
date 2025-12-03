@@ -9,7 +9,14 @@ def main():
     # Add current directory to path
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+    # Use production settings if DATABASE_URL or RENDER is set (indicates production env)
+    # Otherwise default to development
+    if 'DATABASE_URL' in os.environ or 'RENDER' in os.environ:
+        settings_module = 'config.settings.production'
+    else:
+        settings_module = 'config.settings.development'
+    
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

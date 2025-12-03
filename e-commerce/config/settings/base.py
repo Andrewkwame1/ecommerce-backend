@@ -115,7 +115,9 @@ USE_TZ = True
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+# Only include static directory if it exists
+STATIC_DIR = BASE_DIR / 'static'
+STATICFILES_DIRS = [str(STATIC_DIR)] if STATIC_DIR.exists() else []
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
