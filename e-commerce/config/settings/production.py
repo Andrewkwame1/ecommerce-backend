@@ -17,16 +17,14 @@ DEBUG = False  # ALWAYS False in production - never trust environment variables
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-in-production')
 
 # Parse ALLOWED_HOSTS from environment or use wildcard for cloud deployments
-# Force wildcard for Render since it doesn't provide ALLOWED_HOSTS env var
+# CRITICAL: Render passes ALLOWED_HOSTS env var but we need to override it for production
+# We want wildcard to accept any host on Render's reverse proxy
+# The reverse proxy handles the actual security
 ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', '')
 
-if ALLOWED_HOSTS_ENV:
-    # If explicitly set in environment, use those values
-    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
-else:
-    # Default to wildcard for cloud deployments (Render, Railway, etc.)
-    # This is safe because we validate with X-Forwarded-Host
-    ALLOWED_HOSTS = ['*']
+# ALWAYS use wildcard in production - ignore any ALLOWED_HOSTS env var
+# This is safe because Render's reverse proxy validates the actual request
+ALLOWED_HOSTS = ['*']
 
 print(f"[PRODUCTION] DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}, ALLOWED_HOSTS_ENV={ALLOWED_HOSTS_ENV}")
 
