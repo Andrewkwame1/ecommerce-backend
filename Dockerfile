@@ -18,8 +18,8 @@ WORKDIR /app
 
 # Copy requirements from e-commerce directory
 COPY e-commerce/requirements.txt .
-RUN pip install --upgrade pip setuptools wheel --root-user-action=ignore && \
-  pip install -r requirements.txt --root-user-action=ignore
+RUN pip install --upgrade pip setuptools wheel && \
+  pip install -r requirements.txt
 
 # Copy the e-commerce project to /app
 COPY e-commerce/ .
