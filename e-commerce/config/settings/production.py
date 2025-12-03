@@ -62,23 +62,36 @@ else:
     }
 
 # ===== REDIS/CACHE CONFIGURATION =====
-# Use Redis for caching and sessions in production
-REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+# Use Redis for caching and sessions in production if available
+# Fall back to local memory cache if Redis is not available
+REDIS_URL = os.getenv('REDIS_URL', '')
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_URL,
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'SOCKET_CONNECT_TIMEOUT': 5,
-            'SOCKET_TIMEOUT': 5,
-            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-        },
-        'KEY_PREFIX': 'ecommerce',
-        'TIMEOUT': 3600,  # 1 hour default
+if REDIS_URL:
+    # If Redis is configured, use it
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            },
+            'KEY_PREFIX': 'ecommerce',
+            'TIMEOUT': 3600,  # 1 hour default
+        }
     }
-}
+else:
+    # Fall back to in-memory cache for Render without Redis add-on
+    # This is suitable for single-instance deployments
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'ecommerce-cache',
+            'TIMEOUT': 3600,  # 1 hour default
+        }
+    }
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
@@ -111,14 +124,18 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ===== CELERY CONFIGURATION =====
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'amqp://guest:guest@localhost:5672//')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', REDIS_URL)
+# Use environment variables if available, but provide safe defaults
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'memory://')
+# Use cache+locmem as result backend fallback for Render
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'cache+locmem://')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+# Disable celery in production if no broker is configured
+CELERY_TASK_ALWAYS_EAGER = True if CELERY_BROKER_URL == 'memory://' else False
 
 # ===== LOGGING =====
 LOGGING = {
