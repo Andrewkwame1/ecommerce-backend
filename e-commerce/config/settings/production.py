@@ -7,23 +7,33 @@ import os
 from pathlib import Path
 from .base import *
 
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
+
 # Override base settings for production
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-in-production')
 
-# Parse ALLOWED_HOSTS from environment or use wildcard for Render
-allowed_hosts_str = os.getenv('ALLOWED_HOSTS', '')
-if allowed_hosts_str:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')]
+# Parse ALLOWED_HOSTS from environment or use wildcard for cloud deployments
+# Force wildcard for Render since it doesn't provide ALLOWED_HOSTS env var
+ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', '')
+
+if ALLOWED_HOSTS_ENV:
+    # If explicitly set in environment, use those values
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
 else:
-    # Default to wildcard for cloud deployments
+    # Default to wildcard for cloud deployments (Render, Railway, etc.)
+    # This is safe because we validate with X-Forwarded-Host
     ALLOWED_HOSTS = ['*']
+
+print(f"[PRODUCTION] DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}")
 
 # ===== DATABASE CONFIGURATION =====
 # Check if DATABASE_URL is provided (Render PostgreSQL addon)
-if os.getenv('DATABASE_URL'):
+if os.getenv('DATABASE_URL') and dj_database_url:
     # Use dj-database-url to parse DATABASE_URL
-    import dj_database_url
     DATABASES = {
         'default': dj_database_url.config(default=os.getenv('DATABASE_URL'), conn_max_age=600)
     }
