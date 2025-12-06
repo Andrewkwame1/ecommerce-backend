@@ -1,9 +1,9 @@
 """Pytest configuration for Django tests."""
 import os
 import django
-from django.conf import settings
 
-def pytest_configure():
-    """Configure Django settings for pytest."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
-    django.setup()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
+django.setup()
+
+# pytest-django will automatically use DJANGO_SETTINGS_MODULE
+
