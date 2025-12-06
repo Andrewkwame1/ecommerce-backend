@@ -1,84 +1,124 @@
-# E-commerce Backend API
+# E-Commerce Backend API
 
-A robust, scalable e-commerce backend built with Django REST Framework, featuring JWT authentication, asynchronous task processing, caching, and comprehensive API endpoints.
+A production-ready, scalable e-commerce backend built with **Django REST Framework 3.16**, featuring JWT authentication, asynchronous task processing, comprehensive testing, and enterprise-grade security.
 
-## 🚀 Features
+## 🎯 Project Status
 
-- **User Management**: Registration, authentication, email verification, password reset
-- **Product Catalog**: Categories, products, variants, reviews, wishlist
-- **Shopping Cart**: Session-based and user-based carts
-- **Order Management**: Checkout, order tracking, status updates
-- **Payment Integration**: Stripe payment processing
-- **Asynchronous Tasks**: Email notifications, inventory updates via Celery
-- **Caching**: Redis caching for improved performance
-- **API Documentation**: RESTful API with filtering, search, and pagination
+[![Deployment Status](https://img.shields.io/badge/Deployment-Live-brightgreen?style=flat-square&logo=render)](https://ecommerce-backend-2-88ro.onrender.com)
+[![Build Status](https://github.com/Andrewkwame1/ecommerce-backend/actions/workflows/deploy.yml/badge.svg)](https://github.com/Andrewkwame1/ecommerce-backend/actions/workflows/deploy.yml)
+[![Tests](https://img.shields.io/badge/Tests-18/18%20Passing-brightgreen?style=flat-square)](https://github.com/Andrewkwame1/ecommerce-backend/actions)
+[![Code Coverage](https://img.shields.io/badge/Coverage-~50%25-yellow?style=flat-square)](coverage.xml)
+[![Python Version](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square&logo=python)](https://www.python.org/downloads/)
+[![Django Version](https://img.shields.io/badge/Django-5.2.8-darkgreen?style=flat-square&logo=django)](https://www.djangoproject.com/)
+[![DRF Version](https://img.shields.io/badge/DRF-3.16-red?style=flat-square)](https://www.django-rest-framework.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+
+✅ **Production Ready** | 🔒 **Secure** | 📊 **Well-Tested** | 🚀 **Deployed**
+
+- **Live API**: https://ecommerce-backend-2-88ro.onrender.com/api/v1/
+- **Admin Dashboard**: https://ecommerce-backend-2-88ro.onrender.com/admin/
+- **API Documentation**: https://ecommerce-backend-2-88ro.onrender.com/api/docs/
+- **Schema**: https://ecommerce-backend-2-88ro.onrender.com/api/schema/
+
+## ✨ Key Features
+
+### Core E-Commerce
+- **User Management**: Registration, authentication, profile management, address management
+- **Product Catalog**: Full CRUD, categories, filtering, search, reviews, wishlist
+- **Shopping Cart**: Add/remove/update items, session persistence
+- **Order Management**: Complete lifecycle, status tracking, order history
+- **Payment Integration**: Stripe integration with webhook support
+- **Reviews & Ratings**: Product reviews with user verification
+
+### Advanced Features
+- **Asynchronous Tasks**: Celery + RabbitMQ for background jobs
+- **Email Notifications**: Order confirmations, password resets, shipping updates
+- **Caching Strategy**: Redis caching for products and sessions
+- **Inventory Management**: Stock tracking and low-stock alerts
+- **Admin Dashboard**: Comprehensive Django admin interface
+
+### Security & Quality
+- **JWT Authentication**: Secure token-based auth (access + refresh tokens)
+- **Rate Limiting**: API rate limiting to prevent abuse
+- **Comprehensive Testing**: 18 automated tests with coverage reporting
+- **CORS Support**: Configurable cross-origin requests
+- **Input Validation**: Full request validation with error handling
+- **Type Hints**: 34+ type annotations for code clarity
+- **Code Quality**: Zero warnings, clean code architecture
+
+## 🚀 Quick Demo
+
+### Test the Live API (No Setup Required!)
+
+```bash
+# Get API information
+curl https://ecommerce-backend-2-88ro.onrender.com/api/v1/
+
+# Check health status
+curl https://ecommerce-backend-2-88ro.onrender.com/healthz/
+
+# List products
+curl https://ecommerce-backend-2-88ro.onrender.com/api/v1/products/
+
+# View API documentation
+# Open: https://ecommerce-backend-2-88ro.onrender.com/api/docs/
+```
+
+### Or Run Locally with Docker
+
+```bash
+# Clone & setup
+git clone https://github.com/Andrewkwame1/ecommerce-backend.git
+cd ecommerce-backend/e-commerce
+
+# Build Docker image
+docker build -t ecommerce-api:dev .
+
+# Run container
+docker run -d --name api -p 8000:8000 ecommerce-api:dev
+
+# Access locally
+# http://localhost:8000/api/v1/
+# http://localhost:8000/api/docs/
+```
 
 ## 📋 Prerequisites
 
-- Python 3.11+
-- Docker & Docker Compose
-- PostgreSQL 15+
-- Redis 7+
-- RabbitMQ 3+
+- **Python 3.11+**
+- **Docker & Docker Compose**
+- **PostgreSQL 15+**
+- **Redis 7+**
+- **RabbitMQ 3+**
 
-## 🛠️ Installation & Setup
+## 🛠️ Quick Start
 
-### 1. Clone the Repository
+### Option 1: Docker Compose (Recommended)
 
 ```bash
-git clone https://github.com/Andrewkeame1/ecommerce-backend.git
+# Clone repository
+git clone https://github.com/Andrewkwame1/ecommerce-backend.git
 cd ecommerce-backend
-```
 
-### 2. Create Environment File
-
-```bash
+# Create environment file
 cp .env.example .env
-```
+# Edit .env with your configuration
 
-Edit `.env` with your configuration:
-
-```env
-DJANGO_SECRET_KEY=your-super-secret-key-here
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-
-DB_NAME=ecommerce
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_HOST=db
-DB_PORT=5432
-
-REDIS_URL=redis://redis:6379/1
-CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
-
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-
-STRIPE_SECRET_KEY=sk_test_your_stripe_key
-```
-
-### 3. Using Docker (Recommended)
-
-```bash
-# Build and start all services
+# Build and start services
 docker-compose up --build
 
-# Run migrations
+# Run migrations (in another terminal)
 docker-compose exec web python manage.py migrate
 
 # Create superuser
 docker-compose exec web python manage.py createsuperuser
 
-# Load seed data (optional)
-docker-compose exec web python manage.py loaddata seed_data.json
+# Access the API
+# http://localhost:8000/api/v1/
+# http://localhost:8000/api/docs/
+# http://localhost:8000/admin/
 ```
 
-The API will be available at `http://localhost:8000`
-
-### 4. Manual Setup (Without Docker)
+### Option 2: Local Development
 
 ```bash
 # Create virtual environment
@@ -86,9 +126,14 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env
 
 # Run migrations
+cd e-commerce
 python manage.py migrate
 
 # Create superuser
@@ -97,226 +142,449 @@ python manage.py createsuperuser
 # Start development server
 python manage.py runserver
 
-# In separate terminals, start Celery
+# Start Celery (in separate terminals)
 celery -A config worker -l info
 celery -A config beat -l info
 ```
 
-## 📚 API Documentation
+## 🌐 API Endpoints
+
+### Base URL
+```
+Production: https://ecommerce-backend-2-88ro.onrender.com/api/v1/
+Local Dev: http://localhost:8000/api/v1/
+```
 
 ### Authentication Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/register/` | Register new user |
-| POST | `/api/v1/auth/login/` | Login user |
-| POST | `/api/v1/auth/logout/` | Logout user |
-| POST | `/api/v1/auth/refresh/` | Refresh access token |
-| GET | `/api/v1/auth/verify-email/<token>/` | Verify email |
-| POST | `/api/v1/auth/password/reset/` | Request password reset |
-| POST | `/api/v1/auth/password/reset/confirm/` | Confirm password reset |
-| POST | `/api/v1/auth/password/change/` | Change password |
+```
+POST   /api/v1/auth/register/           # Register new user
+POST   /api/v1/auth/login/              # Login user
+POST   /api/v1/auth/logout/             # Logout user
+POST   /api/v1/auth/refresh/            # Refresh access token
+GET    /api/v1/auth/verify-email/<token>/  # Verify email
+POST   /api/v1/auth/password/reset/     # Request password reset
+POST   /api/v1/auth/password/reset/confirm/ # Confirm password reset
+```
 
 ### User Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/auth/me/` | Get user profile |
-| PUT | `/api/v1/auth/me/` | Update user profile |
-| GET | `/api/v1/auth/me/addresses/` | List user addresses |
-| POST | `/api/v1/auth/me/addresses/` | Create address |
-| PUT | `/api/v1/auth/me/addresses/<id>/` | Update address |
-| DELETE | `/api/v1/auth/me/addresses/<id>/` | Delete address |
+```
+GET    /api/v1/auth/me/                 # Get user profile
+PUT    /api/v1/auth/me/                 # Update user profile
+GET    /api/v1/auth/me/addresses/       # List user addresses
+POST   /api/v1/auth/me/addresses/       # Create address
+```
 
 ### Product Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/products/` | List products |
-| GET | `/api/v1/products/<slug>/` | Get product details |
-| GET | `/api/v1/products/<slug>/reviews/` | List product reviews |
-| POST | `/api/v1/products/<slug>/reviews/` | Create review |
-| GET | `/api/v1/products/categories/` | List categories |
-| POST | `/api/v1/products/<slug>/wishlist/` | Toggle wishlist |
-| GET | `/api/v1/products/wishlist/me/` | Get user wishlist |
+```
+GET    /api/v1/products/                # List products
+GET    /api/v1/products/<slug>/         # Get product details
+GET    /api/v1/products/<slug>/reviews/ # List product reviews
+POST   /api/v1/products/<slug>/reviews/ # Create review
+POST   /api/v1/products/<slug>/wishlist/ # Toggle wishlist
+```
 
 ### Cart Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/cart/` | Get cart |
-| POST | `/api/v1/cart/items/` | Add to cart |
-| PUT | `/api/v1/cart/items/<id>/` | Update cart item |
-| DELETE | `/api/v1/cart/items/<id>/` | Remove from cart |
-| DELETE | `/api/v1/cart/clear/` | Clear cart |
+```
+GET    /api/v1/cart/                    # Get cart
+POST   /api/v1/cart/items/              # Add to cart
+PUT    /api/v1/cart/items/<id>/         # Update cart item
+DELETE /api/v1/cart/items/<id>/         # Remove from cart
+DELETE /api/v1/cart/clear/              # Clear entire cart
+```
 
 ### Order Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/orders/` | List user orders |
-| POST | `/api/v1/orders/` | Create order (checkout) |
-| GET | `/api/v1/orders/<id>/` | Get order details |
-| POST | `/api/v1/orders/<id>/cancel/` | Cancel order |
+```
+GET    /api/v1/orders/                  # List user orders
+POST   /api/v1/orders/                  # Create order (checkout)
+GET    /api/v1/orders/<id>/             # Get order details
+POST   /api/v1/orders/<id>/cancel/      # Cancel order
+```
 
 ### Payment Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/payments/create-intent/` | Create payment intent |
-| POST | `/api/v1/payments/confirm/` | Confirm payment |
-| POST | `/api/v1/payments/webhook/` | Stripe webhook |
+```
+POST   /api/v1/payments/create-intent/  # Create payment intent
+POST   /api/v1/payments/confirm/        # Confirm payment
+POST   /api/v1/payments/webhook/        # Stripe webhook
+```
 
 ## 🔍 Query Parameters
 
-### Product List Filters
-
+### Product Filtering
 ```
-GET /api/v1/products/?category=electronics&min_price=100&max_price=500&in_stock=true&featured=true&search=laptop&ordering=-created_at&page=1
+GET /api/v1/products/?category=electronics&min_price=100&max_price=500&in_stock=true&search=laptop&ordering=-created_at&page=1
 ```
 
 **Available filters:**
 - `category` - Filter by category slug
-- `min_price` - Minimum price
-- `max_price` - Maximum price
-- `in_stock` - Show only in-stock items
+- `min_price` / `max_price` - Price range filtering
+- `in_stock` - Show only in-stock items (true/false)
 - `featured` - Show only featured products
 - `search` - Search in name, description, SKU
 - `ordering` - Sort by: `price`, `-price`, `created_at`, `-created_at`, `name`
-- `page` - Page number
+- `page` - Pagination page number
 
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-python manage.py test
+# Run all tests with coverage
+pytest --cov=apps --cov-report=html --cov-report=term
 
-# Run with coverage
+# Run tests with JUnit XML output
+pytest --junitxml=junit.xml -v
+
+# Run specific test module
+pytest apps/users/tests.py
+
+# Run with verbose output
+pytest -v
+
+# Generate coverage report
 coverage run --source='.' manage.py test
 coverage report
 coverage html
-
-# Run specific app tests
-python manage.py test apps.users
-python manage.py test apps.products
 ```
 
-## 📊 Database Migrations
+**Test Coverage:**
+- ✅ 18 automated tests
+- ✅ ~50% code coverage
+- ✅ All core modules tested
+- ✅ API endpoint validation
+- ✅ Model integrity tests
 
-```bash
-# Create migrations
-python manage.py makemigrations
+## 📊 Database Models
 
-# Apply migrations
-python manage.py migrate
+### Users App
+- `User` - Custom user model with email authentication
+- `UserProfile` - Extended user information
+- `Address` - User addresses for shipping
 
-# View migration status
-python manage.py showmigrations
+### Products App
+- `Category` - Product categories
+- `Product` - Core product model
+- `ProductImage` - Product images
+- `ProductVariant` - Product variants (size, color, etc.)
+- `Review` - Product reviews with ratings
+- `Wishlist` - User wishlists
 
-# Revert migration
-python manage.py migrate app_name migration_name
+### Cart App
+- `Cart` - User shopping cart
+- `CartItem` - Individual cart items
+
+### Orders App
+- `Order` - Customer orders
+- `OrderItem` - Individual order items
+- `OrderStatusHistory` - Order status tracking
+
+### Payments App
+- `Payment` - Payment records with Stripe integration
+
+### Notifications App
+- `Notification` - System notifications
+
+## 🔐 Security Features
+
+✅ **Implemented:**
+- JWT authentication with access/refresh tokens
+- Cryptographically secure SECRET_KEY generation
+- SECURE_SSL_REDIRECT enabled in production
+- Password hashing with Django's default algorithm
+- CSRF protection
+- Rate limiting on auth endpoints
+- Input validation and sanitization
+- SQL injection prevention (Django ORM)
+- XSS protection (template auto-escaping)
+- CORS configured for specific domains
+- Environment variables for sensitive data
+- No secrets in version control
+
+## 🚀 Deployment
+
+### Production Environment
+- **Platform**: Render.com
+- **Database**: PostgreSQL (managed)
+- **Redis**: Managed Redis instance
+- **Static Files**: Served via whitenoise
+- **Media Files**: Local storage (can be configured for S3)
+
+### Environment Configuration
+
+Create `.env` file with:
+```env
+# Django
+DJANGO_SECRET_KEY=<50+ character random key>
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+
+# Database
+DB_NAME=ecommerce
+DB_USER=postgres
+DB_PASSWORD=<strong password>
+DB_HOST=localhost
+DB_PORT=5432
+
+# Redis
+REDIS_URL=redis://localhost:6379/1
+
+# Celery
+CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
+
+# Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=<app-specific password>
+
+# Stripe
+STRIPE_SECRET_KEY=sk_live_xxxxx
+STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
 ```
 
-## 🔧 Management Commands
-
-### Seed Database
-
-```bash
-python manage.py loaddata seed_data.json
-```
-
-### Create Sample Data
-
-```python
-# scripts/seed_data.py
-from apps.users.models import User
-from apps.products.models import Category, Product
-
-# Create categories
-electronics = Category.objects.create(name="Electronics", slug="electronics")
-clothing = Category.objects.create(name="Clothing", slug="clothing")
-
-# Create products
-Product.objects.create(
-    name="Laptop",
-    slug="laptop",
-    description="High-performance laptop",
-    category=electronics,
-    price=999.99,
-    sku="LAP-001",
-    quantity=50
-)
-```
-
-## 📈 Performance Optimization
-
-### Caching Strategy
-
-```python
-# Cache product list for 1 hour
-cache.set('products_list', products, 3600)
-
-# Cache product detail for 5 minutes
-cache.set(f'product_detail_{slug}', data, 300)
-```
-
-### Query Optimization
-
-```python
-# Use select_related for foreign keys
-products = Product.objects.select_related('category').all()
-
-# Use prefetch_related for many-to-many
-products = Product.objects.prefetch_related('images', 'reviews').all()
-```
-
-## 🚢 Deployment
-
-### Production Settings
-
-Update `config/settings/production.py`:
-
-```python
-DEBUG = False
-ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com']
-
-# Security settings
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
-
-# Static files on S3
-USE_S3 = True
-```
-
-### Deploy with Docker
+### Docker Deployment
 
 ```bash
 # Build production image
 docker build -t ecommerce-backend:latest .
 
 # Run migrations
-docker-compose -f docker-compose.prod.yml run web python manage.py migrate
+docker-compose -f docker-compose.prod.yml exec web python manage.py migrate
 
 # Collect static files
-docker-compose -f docker-compose.prod.yml run web python manage.py collectstatic --noinput
+docker-compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
 
 # Start services
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## 🔒 Security Best Practices
+## 📁 Project Structure
 
-1. **Environment Variables**: Never commit `.env` file
-2. **JWT Tokens**: Short-lived access tokens (1 hour), longer refresh tokens (7 days)
-3. **Rate Limiting**: Implemented on authentication endpoints
-4. **Input Validation**: All user inputs are validated
-5. **SQL Injection**: Django ORM prevents SQL injection
-6. **XSS Protection**: Django templates auto-escape by default
-7. **CORS**: Configured for specific domains only
+```
+alx-project-nexus/
+├── e-commerce/                          # Django application root
+│   ├── config/                          # Project configuration
+│   │   ├── __init__.py
+│   │   ├── settings/
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py                 # Base settings (shared)
+│   │   │   ├── development.py          # Development overrides
+│   │   │   ├── production.py           # Production overrides
+│   │   │   └── test.py                 # Test settings
+│   │   ├── urls.py                     # URL routing configuration
+│   │   ├── wsgi.py                     # WSGI application
+│   │   ├── asgi.py                     # ASGI application
+│   │   ├── celery.py                   # Celery configuration
+│   │   └── health.py                   # Health check endpoints
+│   │
+│   ├── apps/                            # Django applications
+│   │   ├── users/                      # User management app
+│   │   │   ├── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py                # Admin configuration
+│   │   │   ├── apps.py
+│   │   │   ├── models.py               # User models
+│   │   │   ├── serializers.py          # REST serializers
+│   │   │   ├── views.py                # API views
+│   │   │   ├── urls.py                 # URL patterns
+│   │   │   ├── permissions.py          # Custom permissions
+│   │   │   ├── tasks.py                # Celery tasks
+│   │   │   └── tests.py                # Unit tests (6 user + 3 API tests)
+│   │   │
+│   │   ├── products/                   # Product catalog app
+│   │   │   ├── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py                # Admin interface
+│   │   │   ├── apps.py
+│   │   │   ├── models.py               # Category, Product, Review, Wishlist
+│   │   │   ├── serializers.py          # Product serializers
+│   │   │   ├── views.py                # Product views
+│   │   │   ├── urls.py                 # Product routes
+│   │   │   ├── filters.py              # Search & filtering
+│   │   │   ├── tasks.py                # Background tasks
+│   │   │   └── tests.py                # Product tests
+│   │   │
+│   │   ├── cart/                       # Shopping cart app
+│   │   │   ├── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py
+│   │   │   ├── apps.py
+│   │   │   ├── models.py               # Cart and CartItem models
+│   │   │   ├── serializers.py          # Cart serializers
+│   │   │   ├── views.py                # Cart API endpoints
+│   │   │   ├── urls.py                 # Cart routes
+│   │   │   └── tests.py                # Cart tests (3 tests)
+│   │   │
+│   │   ├── orders/                     # Order management app
+│   │   │   ├── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py                # Order admin
+│   │   │   ├── apps.py
+│   │   │   ├── models.py               # Order and OrderItem
+│   │   │   ├── serializers.py          # Order serializers
+│   │   │   ├── views.py                # Order API views
+│   │   │   ├── urls.py                 # Order routes
+│   │   │   ├── tasks.py                # Order processing tasks
+│   │   │   └── tests.py                # Order tests (3 tests)
+│   │   │
+│   │   ├── payments/                   # Payment processing app
+│   │   │   ├── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py
+│   │   │   ├── apps.py
+│   │   │   ├── models.py               # Payment model
+│   │   │   ├── serializers.py          # Payment serializers
+│   │   │   ├── views.py                # Stripe integration views
+│   │   │   ├── urls.py                 # Payment routes
+│   │   │   ├── services.py             # Stripe service layer
+│   │   │   └── tests.py                # Payment tests (3 tests)
+│   │   │
+│   │   └── notifications/              # Email notifications app
+│   │       ├── migrations/
+│   │       ├── __init__.py
+│   │       ├── admin.py
+│   │       ├── apps.py
+│   │       ├── models.py               # Notification model
+│   │       ├── tasks.py                # Email sending tasks
+│   │       └── services.py             # Notification services
+│   │
+│   ├── utils/                           # Shared utilities
+│   │   ├── __init__.py
+│   │   ├── exceptions.py               # Custom exception classes
+│   │   ├── validators.py               # Input validators
+│   │   ├── pagination.py               # Pagination classes
+│   │   ├── permissions.py              # Custom DRF permissions
+│   │   ├── cache.py                    # Caching utilities
+│   │   └── inventory.py                # Inventory management
+│   │
+│   ├── static/                          # Static files (CSS, JS, images)
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── images/
+│   │
+│   ├── media/                           # User uploaded files
+│   │   ├── products/
+│   │   ├── avatars/
+│   │   └── documents/
+│   │
+│   ├── logs/                            # Application logs
+│   │   ├── debug.log
+│   │   ├── error.log
+│   │   └── access.log
+│   │
+│   ├── scripts/                         # Management scripts
+│   │   ├── __init__.py
+│   │   ├── seed_data.py                # Database seeding
+│   │   └── cleanup.py                  # Cleanup tasks
+│   │
+│   ├── templates/                       # Email templates
+│   │   └── emails/
+│   │       ├── welcome.html
+│   │       ├── order_confirmation.html
+│   │       ├── password_reset.html
+│   │       └── email_verification.html
+│   │
+│   ├── manage.py                        # Django management script
+│   ├── conftest.py                      # Pytest configuration
+│   ├── pytest.ini                       # Pytest settings
+│   ├── docker-compose.yml               # Docker compose config
+│   ├── Dockerfile                       # Docker image build
+│   └── nginx.conf                       # Nginx configuration
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                   # GitHub Actions CI/CD
+│
+├── .env.example                         # Environment template
+├── .gitignore                           # Git ignore rules
+├── requirements.txt                     # Production dependencies
+├── requirements-dev.txt                 # Development dependencies
+├── README.md                            # This file
+└── LICENSE                              # MIT License
+```
+
+## 📂 Key Directories Explained
+
+### `config/`
+Central configuration hub for Django settings based on environment (development/production/test).
+
+### `apps/`
+Six Django apps, each handling a specific domain:
+- **users**: Authentication, profiles, addresses
+- **products**: Catalog, reviews, wishlist
+- **cart**: Shopping cart management
+- **orders**: Order processing, tracking
+- **payments**: Stripe integration
+- **notifications**: Email notifications
+
+### `utils/`
+Shared utilities used across apps:
+- Custom exceptions and validators
+- Pagination and permissions
+- Caching and inventory logic
+
+### `static/` & `media/`
+- `static/`: CSS, JavaScript, images (served by Whitenoise)
+- `media/`: User uploads (products, avatars, documents)
+
+### `templates/`
+Email templates for notifications:
+- Welcome emails
+- Order confirmations
+- Password reset emails
+- Email verification
+
+## 🔄 CI/CD Pipeline
+
+**GitHub Actions Workflow:**
+1. ✅ Validate Django settings
+2. ✅ Run 18 automated tests
+3. ✅ Generate code coverage reports (HTML, XML, Terminal)
+4. ✅ Build Docker image
+5. ✅ Push to Docker Hub
+6. ✅ Deploy to Render.com
+
+## 📦 Tech Stack
+
+- **Framework**: Django 5.2.8 + DRF 3.16
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
+- **Task Queue**: Celery + RabbitMQ
+- **Testing**: pytest + pytest-django + coverage
+- **API Docs**: drf-spectacular (OpenAPI 3.0)
+- **Authentication**: JWT (simplejwt)
+- **Payment**: Stripe
+- **Deployment**: Docker, Render.com
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -am 'Add feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+## 📝 License
+
+Licensed under the **MIT License**
+
+## 👤 Author
+
+**Andrew Kwame** - [@Andrewkwame1](https://github.com/Andrewkwame1)
+
+## 📞 Support
+
+- 🐛 [GitHub Issues](https://github.com/Andrewkwame1/ecommerce-backend/issues)
+- 🌐 [Live API](https://ecommerce-backend-2-88ro.onrender.com)
+
+## 🙏 Acknowledgments
+
+- Django & DRF community
+- Stripe API
+- PostgreSQL & Redis
+- Celery team
+- All contributors
+
+---
+
+**Last Updated:** December 2025 | **Status:** Production Ready ✅
 
 ## 📝 Project Structure Explanation
 
