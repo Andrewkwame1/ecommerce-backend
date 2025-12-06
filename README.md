@@ -553,38 +553,6 @@ Email templates for notifications:
 - **Payment**: Stripe
 - **Deployment**: Docker, Render.com
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -am 'Add feature'`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
-
-## 📝 License
-
-Licensed under the **MIT License**
-
-## 👤 Author
-
-**Andrew Kwame** - [@Andrewkwame1](https://github.com/Andrewkwame1)
-
-## 📞 Support
-
-- 🐛 [GitHub Issues](https://github.com/Andrewkwame1/ecommerce-backend/issues)
-- 🌐 [Live API](https://ecommerce-backend-2-88ro.onrender.com)
-
-## 🙏 Acknowledgments
-
-- Django & DRF community
-- Stripe API
-- PostgreSQL & Redis
-- Celery team
-- All contributors
-
----
-
-**Last Updated:** December 2025 | **Status:** Production Ready ✅
 
 ## 📝 Project Structure Explanation
 
@@ -820,7 +788,8 @@ For production deployment guidelines, see `DEPLOYMENT.md`.
 
 This project is licensed under the MIT License.
 
-## 👥 Contact
+## 👤 Author
 
-1. Andrew Acheampong - andrewacheampong21@gmail.com
-2. Project Link: [https://github.com/yourusername/ecommerce-backend](https://ecommerce-backend-2-88ro.onrender.com/)
+**Andrew Kwame** - [@Andrewkwame1](https://github.com/Andrewkwame1)
+1. Email - andrewacheampong21@gmail.com
+2. Project Link: [https://github.com/Andrewkwame1/ecommerce-backend](https://ecommerce-backend-2-88ro.onrender.com/)
