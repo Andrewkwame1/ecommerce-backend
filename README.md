@@ -872,9 +872,8 @@ This project is licensed under the MIT License.
 
 ## 👥 Contact
 
-Your Name - your.email@example.com
-
-Project Link: https://github.com/yourusername/ecommerce-backend
+Your Name - andrewacheampong21@gmail.com
+Project Link: [https://github.com/yourusername/ecommerce-backend](https://ecommerce-backend-2-88ro.onrender.com/)
 
 ## 🙏 Acknowledgments
 
