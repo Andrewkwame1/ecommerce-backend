@@ -6,10 +6,15 @@ import pytest
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 django.setup()
 
-# Auto-use django_db marker for all tests
-@pytest.fixture(scope="session")
-def django_db_setup():
-    """Setup Django database for tests."""
-    pass
+
+def pytest_collection_modifyitems(items):
+    """Auto-mark all TestCase-based tests with django_db marker."""
+    for item in items:
+        if item.cls and hasattr(item.cls, '_testMethodName'):
+            # This is a Django TestCase
+            item.add_marker(pytest.mark.django_db(transaction=True))
+
+
+
 
 
