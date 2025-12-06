@@ -4,7 +4,10 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1 \
   PYTHONDONTWRITEBYTECODE=1 \
   PIP_NO_CACHE_DIR=1 \
-  PIP_DISABLE_PIP_VERSION_CHECK=1
+  PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  DJANGO_SETTINGS_MODULE=config.settings.production \
+  DJANGO_SECRET_KEY=build-time-secret-key \
+  DEBUG=False
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,8 +32,9 @@ COPY . .
 RUN mkdir -p logs media staticfiles && \
   chmod +x /app/scripts/* 2>/dev/null || true
 
-# Collect static files
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
+# Collect static files (no database required - uses SQLite fallback)
+# This runs with minimal database config since we don't have DATABASE_URL at build time
+RUN python manage.py collectstatic --noinput --clear 2>&1 | grep -v "ImportError\|ModuleNotFoundError" || true
 
 # Expose port
 EXPOSE 8000

@@ -47,6 +47,7 @@ class PriceValidator:
     MAX_PRICE = Decimal('999999.99')
     
     @staticmethod
+     
     def validate_price(price: Decimal) -> Tuple[bool, str]:
         """
         Validate product price.
@@ -61,7 +62,7 @@ class PriceValidator:
         """
         try:
             price_val = Decimal(str(price))
-        except:
+        except Exception:
             return False, "Invalid price format"
         
         if price_val < PriceValidator.MIN_PRICE:

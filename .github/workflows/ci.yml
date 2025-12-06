@@ -63,6 +63,7 @@ jobs:
         echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
         echo "DB_HOST=localhost" >> $GITHUB_ENV
         echo "DB_PORT=5432" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ecommerce" >> $GITHUB_ENV
         echo "REDIS_URL=redis://localhost:6379/1" >> $GITHUB_ENV
         echo "CELERY_BROKER_URL=memory://" >> $GITHUB_ENV
 

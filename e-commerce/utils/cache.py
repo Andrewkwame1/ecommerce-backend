@@ -9,7 +9,6 @@ Provides efficient caching strategies for common operations:
 """
 
 from django.core.cache import cache
-from django.db.models import Prefetch
 from functools import wraps
 import hashlib
 import json

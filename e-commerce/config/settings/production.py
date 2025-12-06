@@ -4,8 +4,13 @@ Used when deployed on Railway, AWS, or other production servers
 """
 
 import os
-from pathlib import Path
-from .base import *
+import sys
+import logging
+import urllib.parse
+from datetime import timedelta
+
+from .base import *  # noqa: F401, F403
+from .base import BASE_DIR
 
 try:
     import dj_database_url
@@ -21,22 +26,78 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-in-production')
 # We want wildcard to accept any host on Render's reverse proxy
 # The reverse proxy handles the actual security
 ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', '')
+RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME', '')
 
-# ALWAYS use wildcard in production - ignore any ALLOWED_HOSTS env var
-# This is safe because Render's reverse proxy validates the actual request
-ALLOWED_HOSTS = ['*']
+# Production ALLOWED_HOSTS configuration:
+# Option 1: If RENDER_EXTERNAL_HOSTNAME is set (Render platform), use it
+# Option 2: If custom ALLOWED_HOSTS env var is set, use it
+# Option 3: Fallback to wildcard for unknown deployments (Reverse proxy validates)
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS = [RENDER_EXTERNAL_HOSTNAME, 'localhost', '127.0.0.1']
+elif ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
+else:
+    # Wildcard is safe here because reverse proxy (Render/nginx) validates actual requests
+    ALLOWED_HOSTS = ['*']
 
-print(f"[PRODUCTION] DEBUG={DEBUG}, ALLOWED_HOSTS={ALLOWED_HOSTS}, ALLOWED_HOSTS_ENV={ALLOWED_HOSTS_ENV}")
+# Debug logging for ALLOWED_HOSTS configuration
+debug_mode = '--debug' in sys.argv or '--pdb' in sys.argv
+logger_msg = (
+    f"[PRODUCTION CONFIG] "
+    f"DEBUG={DEBUG}, "
+    f"ALLOWED_HOSTS={ALLOWED_HOSTS}, "
+    f"ALLOWED_HOSTS_ENV='{ALLOWED_HOSTS_ENV}', "
+    f"RENDER_EXTERNAL_HOSTNAME='{RENDER_EXTERNAL_HOSTNAME}'"
+)
+if debug_mode or os.getenv('DJANGO_LOG_LEVEL') == 'DEBUG':
+    print(logger_msg, file=sys.stderr)
+else:
+    # Use syslog for production
+    logging.info(logger_msg)
 
 # ===== DATABASE CONFIGURATION =====
+# Priority order:
+# 1. DATABASE_URL (Render, Heroku, Railway PostgreSQL addon)
+# 2. Explicit DB_* environment variables
+# 3. Fallback to SQLite
+
+DATABASES = {}
+
 # Check if DATABASE_URL is provided (Render PostgreSQL addon)
-if os.getenv('DATABASE_URL') and dj_database_url:
-    # Use dj-database-url to parse DATABASE_URL
-    DATABASES = {
-        'default': dj_database_url.config(default=os.getenv('DATABASE_URL'), conn_max_age=600)
-    }
-elif os.getenv('DB_HOST') and os.getenv('DB_HOST') != 'localhost':
-    # Use explicit PostgreSQL configuration if provided
+if os.getenv('DATABASE_URL'):
+    # Try to use dj-database-url if available
+    if dj_database_url:
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=os.getenv('DATABASE_URL'),
+                conn_max_age=600,
+                atomic_requests=True
+            )
+        }
+    else:
+        # Fallback: parse DATABASE_URL manually if dj_database_url not available
+        # DATABASE_URL format: postgresql://user:password@host:port/dbname
+        db_url = os.getenv('DATABASE_URL')
+        if db_url.startswith('postgresql://'):
+            parsed = urllib.parse.urlparse(db_url)
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.postgresql',
+                    'NAME': parsed.path.lstrip('/'),
+                    'USER': parsed.username,
+                    'PASSWORD': parsed.password,
+                    'HOST': parsed.hostname,
+                    'PORT': parsed.port or 5432,
+                    'ATOMIC_REQUESTS': True,
+                    'CONN_MAX_AGE': 600,
+                    'OPTIONS': {
+                        'connect_timeout': 10,
+                    }
+                }
+            }
+
+# If still no database configured, try explicit env vars
+if not DATABASES and os.getenv('DB_HOST') and os.getenv('DB_HOST') != 'localhost':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -52,8 +113,9 @@ elif os.getenv('DB_HOST') and os.getenv('DB_HOST') != 'localhost':
             }
         }
     }
-else:
-    # Fallback to SQLite for standalone deployment without PostgreSQL
+
+# If still no database configured, fallback to SQLite
+if not DATABASES:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -97,19 +159,68 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 
 # ===== SECURITY SETTINGS =====
-# Don't redirect to HTTPS - let Render's reverse proxy handle it
+# HTTPS/SSL REDIRECT CONFIGURATION
+# 
+# IMPORTANT: SECURE_SSL_REDIRECT is DISABLED (False) because:
+#   1. Render's reverse proxy already handles HTTPS
+#   2. All traffic to Django is already https via the reverse proxy
+#   3. The X-Forwarded-Proto header tells us if the original request was https
+#   4. Enabling SECURE_SSL_REDIRECT would cause redirect loops on Render
+#
+# Instead, we:
+#   - Trust the X-Forwarded-Proto header from the reverse proxy
+#   - Set SECURE_PROXY_SSL_HEADER to let Django know about HTTPS
+#   - Set cookie security flags to ensure secure cookie transmission
+#
+# This is the correct approach for reverse proxy deployments (Render, Heroku, AWS ALB, etc.)
+
+# DO NOT redirect to HTTPS - reverse proxy handles it
 SECURE_SSL_REDIRECT = False
-# But trust the X-Forwarded-Proto header from the reverse proxy
+
+# Trust X-Forwarded-Proto header from Render's reverse proxy
+# This tells Django that the original request was over HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Security cookies - ALWAYS use secure flag in production
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ['https://ecommerce-backend-1-v60x.onrender.com', 'https://*.onrender.com']
+
+# CSRF trusted origins - which hosts can make cross-origin requests
+# Dynamically build from ALLOWED_HOSTS to support multiple deployments
+CSRF_TRUSTED_ORIGINS = []
+
+# Add all ALLOWED_HOSTS with https:// prefix
+for host in ALLOWED_HOSTS:
+    if host != '*':
+        # Add both specific domain and wildcard subdomain versions
+        CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
+        if not host.startswith('*.'):
+            CSRF_TRUSTED_ORIGINS.append(f'https://*.{host}')
+
+# Add common deployment platform patterns
+CSRF_TRUSTED_ORIGINS.extend([
+    'https://ecommerce-backend-1-v60x.onrender.com',
+    'https://*.onrender.com',  # Any Render subdomain
+    'https://*.herokuapp.com',  # Heroku subdomains
+    'https://*.railway.app',    # Railway subdomains
+    'http://localhost:3000',    # Local frontend development
+    'http://localhost:8000',    # Local API development
+    'http://127.0.0.1:3000',    # Local frontend (IP)
+    'http://127.0.0.1:8000',    # Local API (IP)
+])
+
+# Remove duplicates while preserving order
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CSRF_TRUSTED_ORIGINS))
+
+# Additional security headers
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# HSTS (HTTP Strict Transport Security)
-SECURE_HSTS_SECONDS = 31536000  # 1 year
+# HSTS (HTTP Strict Transport Security) - Optional for maximum security
+# Warning: Only enable after testing HTTPS thoroughly
+# Once enabled in browser, it caches for SECURE_HSTS_SECONDS (1 year default)
+SECURE_HSTS_SECONDS = 31536000  # 1 year - ONLY enable if HTTPS is permanent
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
@@ -217,11 +328,44 @@ STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 
 # ===== CORS CONFIGURATION =====
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS]
+# Parse CORS origins from environment variable
+CORS_ALLOWED_ORIGINS_STR = os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000'
+)
+CORS_ALLOWED_ORIGINS = [
+    origin.strip() 
+    for origin in CORS_ALLOWED_ORIGINS_STR.split(',') 
+    if origin.strip()
+]
+
+# Add common patterns for different environments
+if RENDER_EXTERNAL_HOSTNAME:
+    CORS_ALLOWED_ORIGINS.extend([
+        f'https://{RENDER_EXTERNAL_HOSTNAME}',
+        'https://*.onrender.com',
+    ])
+
+# CORS settings for API endpoints
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_EXPOSE_HEADERS = [
+    'content-length',
+    'x-json-response',
+]
+CORS_MAX_AGE = 86400  # 24 hours
 
 # ===== JWT CONFIGURATION =====
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
@@ -237,7 +381,6 @@ SIMPLE_JWT = {
     'ISSUER': None,
     'JTI_CLAIM': 'jti',
     'TOKEN_TYPE_CLAIM': 'token_type',
-    'JTI_CLAIM': 'jti',
 
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',

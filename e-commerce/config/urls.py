@@ -17,6 +17,22 @@ def root_view(request):
         'api_v1': '/api/v1/'
     })
 
+# API root view
+@csrf_exempt
+def api_root_view(request):
+    return JsonResponse({
+        'message': 'E-Commerce API v1',
+        'endpoints': {
+            'authentication': '/api/v1/auth/',
+            'products': '/api/v1/products/',
+            'cart': '/api/v1/cart/',
+            'orders': '/api/v1/orders/',
+            'payments': '/api/v1/payments/',
+            'documentation': '/api/docs/',
+            'schema': '/api/schema/',
+        }
+    })
+
 urlpatterns = [
     # Health check endpoints (these should be accessed first and don't need authentication)
     path('healthz/', healthz, name='healthz'),
@@ -31,6 +47,7 @@ urlpatterns = [
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/', api_root_view, name='api-root'),
     
     # API Routes
     path('api/v1/auth/', include('apps.users.urls')),
