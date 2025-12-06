@@ -1,6 +1,7 @@
 """
 Tests for the Orders app.
 """
+import pytest
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
@@ -10,6 +11,7 @@ from apps.products.models import Product, Category
 User = get_user_model()
 
 
+@pytest.mark.django_db(transaction=True)
 class OrderAPITests(TestCase):
     """Test Order API endpoints."""
 

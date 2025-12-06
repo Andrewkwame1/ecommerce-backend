@@ -1,6 +1,7 @@
 """
 Tests for the Users app.
 """
+import pytest
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
@@ -9,6 +10,7 @@ from rest_framework import status
 User = get_user_model()
 
 
+@pytest.mark.django_db(transaction=True)
 class UserModelTests(TestCase):
     """Test User model."""
 
@@ -49,6 +51,7 @@ class UserModelTests(TestCase):
         self.assertFalse(self.user.is_superuser)
 
 
+@pytest.mark.django_db(transaction=True)
 class UserAPITests(TestCase):
     """Test User API endpoints."""
 
