@@ -4,20 +4,23 @@ Uses proper data structures and algorithms for efficient data generation.
 """
 
 import os
-import django
 import random
 from decimal import Decimal
 from datetime import timedelta
+
+import django
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 django.setup()
 
-from django.contrib.auth import get_user_model
-from apps.products.models import Category, Product, ProductImage, ProductVariant, Review
-from apps.cart.models import Cart, CartItem
-from apps.orders.models import Order, OrderItem, OrderStatusHistory
-from apps.users.models import Address, UserProfile
+# NOTE: Django model imports MUST come after django.setup()
+# noqa: E402 - module level import not at top of file (required for Django)
+from apps.products.models import Category, Product, ProductVariant, Review  # noqa: E402
+from apps.cart.models import Cart, CartItem  # noqa: E402
+from apps.orders.models import Order, OrderItem, OrderStatusHistory  # noqa: E402
+from apps.users.models import Address, UserProfile  # noqa: E402
 
 User = get_user_model()
 
@@ -295,7 +298,7 @@ class DatabaseSeeder:
                             is_verified_purchase=True,
                             is_approved=True
                         )
-                    except:
+                    except (Review.DoesNotExist, Exception):  # noqa: BLE001
                         pass  # Skip if review already exists
     
     def seed_users(self):
