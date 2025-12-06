@@ -663,47 +663,6 @@ A comprehensive, production-ready Django REST Framework e-commerce backend with 
 - AWS S3 (optional)
 - Sentry (error tracking)
 
-## 📁 Project Structure
-
-```
-ecommerce/
-├── config/                      # Project configuration
-│   ├── settings/
-│   │   ├── base.py             # Base settings
-│   │   ├── development.py      # Dev settings
-│   │   ├── production.py       # Prod settings
-│   │   └── test.py             # Test settings
-│   ├── urls.py
-│   ├── wsgi.py
-│   ├── asgi.py
-│   └── celery.py
-│
-├── apps/                        # Django apps
-│   ├── users/                  # User management
-│   ├── products/               # Product catalog
-│   ├── cart/                   # Shopping cart
-│   ├── orders/                 # Order management
-│   ├── payments/               # Payment processing
-│   └── notifications/          # Notifications
-│
-├── utils/                       # Shared utilities
-│   ├── exceptions.py
-│   ├── pagination.py
-│   ├── permissions.py
-│   └── validators.py
-│
-├── static/                      # Static files
-├── media/                       # User uploads
-├── logs/                        # Application logs
-├── scripts/                     # Management scripts
-├── templates/                   # Email templates
-│
-├── docker-compose.yml           # Docker compose config
-├── Dockerfile                   # Docker image
-├── nginx.conf                   # Nginx configuration
-├── requirements.txt             # Python dependencies
-└── manage.py                    # Django management
-```
 
 ## 🚀 Installation
 
@@ -856,15 +815,6 @@ pytest apps/users/tests/test_views.py
 
 For production deployment guidelines, see `DEPLOYMENT.md`.
 
-## 📝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
----
 
 ## 📄 License
 
@@ -872,14 +822,5 @@ This project is licensed under the MIT License.
 
 ## 👥 Contact
 
-Your Name - andrewacheampong21@gmail.com
-Project Link: [https://github.com/yourusername/ecommerce-backend](https://ecommerce-backend-2-88ro.onrender.com/)
-
-## 🙏 Acknowledgments
-
-- Django REST Framework
-- Celery
-- Stripe
-- PostgreSQL
-- Redis
-- RabbitMQ
+1. Andrew Acheampong - andrewacheampong21@gmail.com
+2. Project Link: [https://github.com/yourusername/ecommerce-backend](https://ecommerce-backend-2-88ro.onrender.com/)
