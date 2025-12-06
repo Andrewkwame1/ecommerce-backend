@@ -1,13 +1,10 @@
-from rest_framework import status, generics, permissions, viewsets
-from rest_framework.decorators import action
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.db.models import Prefetch
 
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
 from apps.products.models import Product, ProductVariant
-from utils.pagination import StandardPagination
 
 
 class CartDetailView(generics.RetrieveAPIView):
@@ -18,7 +15,7 @@ class CartDetailView(generics.RetrieveAPIView):
     
     def get_object(self):
         # Optimize cart retrieval: get_or_create is atomic and efficient
-        cart, created = Cart.objects.get_or_create(user=self.request.user)
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
         return cart
     
     def retrieve(self, request, *args, **kwargs):
@@ -39,7 +36,7 @@ class AddToCartView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def perform_create(self, serializer):
-        cart, created = Cart.objects.get_or_create(user=self.request.user)
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
         
         product_id = self.request.data.get('product_id')
         variant_id = self.request.data.get('variant_id')
@@ -81,9 +78,10 @@ class CartItemUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 class ClearCartView(generics.GenericAPIView):
     """Clear all items from cart"""
     
+    serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart, _ = Cart.objects.get_or_create(user=request.user)
         cart.clear()
         return Response({'message': 'Cart cleared successfully'}, status=status.HTTP_200_OK)

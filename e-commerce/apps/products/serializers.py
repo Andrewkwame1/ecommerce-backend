@@ -3,19 +3,21 @@ from .models import Category, Product, ProductImage, ProductVariant, Review, Wis
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    children = serializers.SerializerMethodField()
-    product_count = serializers.SerializerMethodField()
+    children = serializers.SerializerMethodField(method_name='get_children')
+    product_count = serializers.SerializerMethodField(method_name='get_product_count')
     
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug', 'description', 'image', 'parent', 'children', 'product_count']
     
-    def get_children(self, obj):
+    def get_children(self, obj) -> list:
+        """Get active child categories."""
         if obj.children.filter(is_active=True).exists():
             return CategorySerializer(obj.children.filter(is_active=True), many=True).data
         return []
     
-    def get_product_count(self, obj):
+    def get_product_count(self, obj) -> int:
+        """Count active products in this category."""
         return obj.products.filter(is_active=True).count()
 
 
@@ -26,32 +28,38 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
-    effective_price = serializers.ReadOnlyField()
+    effective_price = serializers.SerializerMethodField(method_name='get_effective_price')
     
     class Meta:
         model = ProductVariant
         fields = ['id', 'name', 'sku', 'price', 'effective_price', 'quantity', 'attributes', 'is_active']
+    
+    def get_effective_price(self, obj) -> str:
+        """Get effective price of variant."""
+        return str(obj.effective_price)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user_name = serializers.SerializerMethodField()
+    user_name = serializers.SerializerMethodField(method_name='get_user_name')
     
     class Meta:
         model = Review
         fields = ['id', 'user_name', 'rating', 'title', 'comment', 'is_verified_purchase', 'created_at']
         read_only_fields = ['user_name', 'is_verified_purchase', 'created_at']
     
-    def get_user_name(self, obj):
+    def get_user_name(self, obj) -> str:
+        """Get user's display name."""
         return obj.user.get_full_name() or obj.user.email.split('@')[0]
 
 
 class ProductListSerializer(serializers.ModelSerializer):
     """Serializer for product list (lighter)"""
     category_name = serializers.CharField(source='category.name', read_only=True)
-    primary_image = serializers.SerializerMethodField()
-    discount_percentage = serializers.ReadOnlyField()
-    average_rating = serializers.ReadOnlyField()
-    review_count = serializers.SerializerMethodField()
+    primary_image = serializers.SerializerMethodField(method_name='get_primary_image')
+    discount_percentage = serializers.SerializerMethodField(method_name='get_discount_percentage')
+    average_rating = serializers.SerializerMethodField(method_name='get_average_rating')
+    review_count = serializers.SerializerMethodField(method_name='get_review_count')
+    is_in_stock = serializers.SerializerMethodField(method_name='get_is_in_stock')
     
     class Meta:
         model = Product
@@ -61,14 +69,28 @@ class ProductListSerializer(serializers.ModelSerializer):
             'review_count', 'is_featured'
         ]
     
-    def get_primary_image(self, obj):
+    def get_primary_image(self, obj) -> str | None:
+        """Get primary product image URL."""
         image = obj.images.filter(is_primary=True).first()
-        if image:
+        if image and self.context.get('request'):
             return self.context['request'].build_absolute_uri(image.image.url)
         return None
     
-    def get_review_count(self, obj):
+    def get_discount_percentage(self, obj) -> int:
+        """Calculate discount percentage."""
+        return obj.discount_percentage
+    
+    def get_average_rating(self, obj) -> float:
+        """Get average rating of product."""
+        return obj.average_rating
+    
+    def get_review_count(self, obj) -> int:
+        """Count approved reviews."""
         return obj.reviews.filter(is_approved=True).count()
+    
+    def get_is_in_stock(self, obj) -> bool:
+        """Check if product is in stock."""
+        return obj.is_in_stock
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -77,9 +99,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
-    discount_percentage = serializers.ReadOnlyField()
-    average_rating = serializers.ReadOnlyField()
-    is_in_wishlist = serializers.SerializerMethodField()
+    discount_percentage = serializers.SerializerMethodField(method_name='get_discount_percentage')
+    average_rating = serializers.SerializerMethodField(method_name='get_average_rating')
+    is_in_stock = serializers.SerializerMethodField(method_name='get_is_in_stock')
+    is_low_stock = serializers.SerializerMethodField(method_name='get_is_low_stock')
+    is_in_wishlist = serializers.SerializerMethodField(method_name='get_is_in_wishlist')
     
     class Meta:
         model = Product
@@ -91,178 +115,28 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
     
-    def get_is_in_wishlist(self, obj):
+    def get_discount_percentage(self, obj) -> int:
+        """Calculate discount percentage."""
+        return obj.discount_percentage
+    
+    def get_average_rating(self, obj) -> float:
+        """Get average product rating."""
+        return obj.average_rating
+    
+    def get_is_in_stock(self, obj) -> bool:
+        """Check if product is in stock."""
+        return obj.is_in_stock
+    
+    def get_is_low_stock(self, obj) -> bool:
+        """Check if product is low on stock."""
+        return obj.is_low_stock
+    
+    def get_is_in_wishlist(self, obj) -> bool:
+        """Check if product is in user's wishlist."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Wishlist.objects.filter(user=request.user, product=obj).exists()
         return False
-
-
-# apps/products/views.py
-from rest_framework import generics, filters, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from django.core.cache import cache
-from django.db.models import Q, Avg
-
-from .models import Category, Product, Review, Wishlist
-from .serializers import (
-    CategorySerializer, ProductListSerializer, ProductDetailSerializer,
-    ReviewSerializer
-)
-from .filters import ProductFilter
-
-
-class CategoryListView(generics.ListAPIView):
-    """List all active categories"""
-    serializer_class = CategorySerializer
-    queryset = Category.objects.filter(is_active=True, parent=None)  # Only root categories
-    
-    def list(self, request, *args, **kwargs):
-        # Cache categories for 1 hour
-        cache_key = 'categories_list'
-        categories = cache.get(cache_key)
-        
-        if not categories:
-            queryset = self.get_queryset()
-            serializer = self.get_serializer(queryset, many=True)
-            categories = serializer.data
-            cache.set(cache_key, categories, 3600)
-        
-        return Response(categories)
-
-
-class ProductListView(generics.ListAPIView):
-    """List products with filtering, search, and sorting"""
-    serializer_class = ProductListSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_class = ProductFilter
-    search_fields = ['name', 'description', 'sku']
-    ordering_fields = ['price', 'created_at', 'name']
-    ordering = ['-created_at']
-    
-    def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True).select_related('category')
-        
-        # Filter by category slug if provided
-        category_slug = self.request.query_params.get('category')
-        if category_slug:
-            queryset = queryset.filter(category__slug=category_slug)
-        
-        # Filter featured products
-        is_featured = self.request.query_params.get('featured')
-        if is_featured:
-            queryset = queryset.filter(is_featured=True)
-        
-        return queryset
-
-
-class ProductDetailView(generics.RetrieveAPIView):
-    """Get product details by slug"""
-    serializer_class = ProductDetailSerializer
-    lookup_field = 'slug'
-    
-    def get_queryset(self):
-        return Product.objects.filter(is_active=True).select_related('category').prefetch_related(
-            'images', 'variants', 'reviews__user'
-        )
-    
-    def retrieve(self, request, *args, **kwargs):
-        slug = kwargs.get('slug')
-        cache_key = f'product_detail_{slug}'
-        
-        # Try to get from cache
-        cached_data = cache.get(cache_key)
-        if cached_data and not request.user.is_authenticated:
-            # Return cached data for anonymous users
-            return Response(cached_data)
-        
-        # Get fresh data
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        data = serializer.data
-        
-        # Cache for 5 minutes
-        if not request.user.is_authenticated:
-            cache.set(cache_key, data, 300)
-        
-        return Response(data)
-
-
-class ProductReviewListCreateView(generics.ListCreateAPIView):
-    """List and create product reviews"""
-    serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    
-    def get_queryset(self):
-        slug = self.kwargs.get('slug')
-        return Review.objects.filter(
-            product__slug=slug,
-            is_approved=True
-        ).select_related('user')
-    
-    def perform_create(self, serializer):
-        product = Product.objects.get(slug=self.kwargs.get('slug'))
-        serializer.save(user=self.request.user, product=product)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def toggle_wishlist(request, slug):
-    """Add or remove product from wishlist"""
-    try:
-        product = Product.objects.get(slug=slug, is_active=True)
-        wishlist_item = Wishlist.objects.filter(user=request.user, product=product).first()
-        
-        if wishlist_item:
-            wishlist_item.delete()
-            return Response({
-                'message': 'Product removed from wishlist',
-                'in_wishlist': False
-            })
-        else:
-            Wishlist.objects.create(user=request.user, product=product)
-            return Response({
-                'message': 'Product added to wishlist',
-                'in_wishlist': True
-            }, status=status.HTTP_201_CREATED)
-    
-    except Product.DoesNotExist:
-        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def user_wishlist(request):
-    """Get user's wishlist"""
-    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
-    products = [item.product for item in wishlist_items]
-    serializer = ProductListSerializer(products, many=True, context={'request': request})
-    return Response(serializer.data)
-
-
-# apps/products/filters.py
-import django_filters
-from .models import Product
-
-
-class ProductFilter(django_filters.FilterSet):
-    """Filter for products"""
-    
-    min_price = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
-    max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
-    in_stock = django_filters.BooleanFilter(method='filter_in_stock')
-    
-    class Meta:
-        model = Product
-        fields = ['category', 'is_featured']
-    
-    def filter_in_stock(self, queryset, name, value):
-        if value:
-            return queryset.filter(quantity__gt=0)
-        return queryset
 
 
 class WishlistSerializer(serializers.ModelSerializer):
@@ -277,7 +151,7 @@ class WishlistSerializer(serializers.ModelSerializer):
         fields = ['id', 'product_id', 'product_name', 'product_image', 'product_price', 'created_at']
         read_only_fields = ['created_at']
     
-    def get_product_image(self, obj):
+    def get_product_image(self, obj) -> str | None:
         primary_image = obj.product.images.filter(is_primary=True).first()
         if primary_image:
             return primary_image.image.url

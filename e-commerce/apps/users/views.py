@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from datetime import timedelta
-from django.shortcuts import get_object_or_404
 
 from .models import User, Address, EmailVerificationToken, PasswordResetToken
 from .serializers import (
@@ -19,6 +18,7 @@ from utils.pagination import StandardPagination
 class UserRegistrationView(APIView):
     """User registration endpoint"""
     
+    serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
@@ -51,6 +51,7 @@ class UserRegistrationView(APIView):
 class UserLoginView(APIView):
     """User login endpoint"""
     
+    serializer_class = UserLoginSerializer
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
@@ -82,6 +83,7 @@ class UserLoginView(APIView):
 class UserLogoutView(APIView):
     """User logout endpoint"""
     
+    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
@@ -98,6 +100,7 @@ class UserLogoutView(APIView):
 class EmailVerificationView(APIView):
     """Email verification endpoint"""
     
+    serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
     
     def get(self, request, token):
@@ -131,6 +134,7 @@ class EmailVerificationView(APIView):
 class PasswordChangeView(APIView):
     """Password change endpoint for authenticated users"""
     
+    serializer_class = PasswordChangeSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
@@ -150,6 +154,7 @@ class PasswordChangeView(APIView):
 class PasswordResetRequestView(APIView):
     """Request password reset endpoint"""
     
+    serializer_class = PasswordResetRequestSerializer
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
@@ -188,6 +193,7 @@ class PasswordResetRequestView(APIView):
 class PasswordResetConfirmView(APIView):
     """Confirm password reset endpoint"""
     
+    serializer_class = PasswordResetConfirmSerializer
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
@@ -241,6 +247,10 @@ class AddressListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardPagination
     
     def get_queryset(self):
+        # Prevent errors during schema generation with AnonymousUser
+        if getattr(self, 'swagger_fake_view', False):
+            return Address.objects.none()
+        
         # Filter by user and order by default address first, then by creation date
         return Address.objects.filter(
             user=self.request.user

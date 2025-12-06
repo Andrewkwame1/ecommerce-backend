@@ -1,14 +1,14 @@
-from rest_framework import status, generics, permissions, viewsets
+from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from drf_spectacular.utils import extend_schema
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch
 
-from .models import Category, Product, ProductImage, ProductVariant, Review, Wishlist
+from .models import Category, Product, Review, Wishlist
 from .serializers import (
     CategorySerializer, ProductListSerializer, ProductDetailSerializer,
     ReviewSerializer, WishlistSerializer
@@ -24,6 +24,10 @@ class CategoryListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     
     def get_queryset(self):
+        # Prevent errors during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Category.objects.none()
+        
         # Use cache for category list (expensive hierarchical query)
         cache_key = 'categories_list_root'
         categories = cache.get(cache_key)
@@ -116,6 +120,10 @@ class ProductReviewListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardPagination
     
     def get_queryset(self):
+        # Prevent errors during schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Review.objects.none()
+        
         product_slug = self.kwargs['slug']
         product = get_object_or_404(Product, slug=product_slug)
         
@@ -142,6 +150,10 @@ class ProductReviewListCreateView(generics.ListCreateAPIView):
         cache.delete(cache_key)
 
 
+@extend_schema(
+    request=None,
+    responses=WishlistSerializer
+)
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def toggle_wishlist(request, slug):
@@ -170,6 +182,10 @@ def toggle_wishlist(request, slug):
         }, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    request=None,
+    responses=WishlistSerializer(many=True)
+)
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def user_wishlist(request):

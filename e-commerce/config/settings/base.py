@@ -168,6 +168,11 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Complete E-Commerce Backend API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'ENUM_NAME_OVERRIDES': {
+        'OrderStatusEnum': 'apps.orders.models.Order.STATUS_CHOICES',
+        'PaymentStatusEnum': 'apps.payments.models.Payment.STATUS_CHOICES',
+        'NotificationStatusEnum': 'apps.notifications.models.Notification.STATUS_CHOICES',
+    },
 }
 
 # CORS Settings

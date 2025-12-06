@@ -1,5 +1,4 @@
 from rest_framework import status, generics, permissions
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -7,7 +6,7 @@ from django.db.models import Prefetch
 
 from .models import Order, OrderItem, OrderStatusHistory
 from .serializers import OrderListSerializer, OrderDetailSerializer
-from apps.cart.models import Cart, CartItem
+from apps.cart.models import Cart
 from apps.users.models import Address
 from apps.products.models import Product
 from utils.pagination import StandardPagination
@@ -20,6 +19,10 @@ class OrderListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardPagination
     
     def get_queryset(self):
+        # Prevent errors during schema generation with AnonymousUser
+        if getattr(self, 'swagger_fake_view', False):
+            return Order.objects.none()
+        
         # Optimize: prefetch related items, status history, and user
         return Order.objects.filter(
             user=self.request.user
@@ -48,8 +51,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
         shipping_address = get_object_or_404(Address, id=shipping_address_id, user=user)
         billing_address = get_object_or_404(Address, id=billing_address_id, user=user)
         
-        # Use F expressions for atomic calculations (safer than Python calculations)
-        from django.db.models import F, Value
+        # Calculate totals
         from decimal import Decimal
         
         subtotal = cart.subtotal
@@ -130,6 +132,7 @@ class OrderDetailView(generics.RetrieveAPIView):
 class CancelOrderView(generics.GenericAPIView):
     """Cancel order with proper inventory restoration"""
     
+    serializer_class = OrderDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     @transaction.atomic

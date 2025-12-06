@@ -1,6 +1,5 @@
 from celery import shared_task
 from django.core.cache import cache
-from django.conf import settings
 from django.db import models
 import logging
 

@@ -1,8 +1,6 @@
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 import logging
 
 logger = logging.getLogger(__name__)
@@ -56,7 +54,7 @@ def create_notification(user_id, notification_type, subject, message, data=None)
         
         user = User.objects.get(id=user_id)
         
-        notification = Notification.objects.create(
+        Notification.objects.create(
             user=user,
             notification_type=notification_type,
             subject=subject,

@@ -13,14 +13,9 @@ DEBUG = True
 # Use a test database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'ecommerce'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',  # In-memory database for speed
         'ATOMIC_REQUESTS': True,
-        'CONN_MAX_AGE': 0,  # Don't persist connections in tests
     }
 }
 
@@ -51,6 +46,9 @@ CSRF_COOKIE_SECURE = False
 
 # Email backend for tests (capture emails in memory)
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+# Frontend URL for test email verification links
+FRONTEND_URL = 'http://localhost:3000'
 
 # Logging - reduced output for cleaner test results
 LOGGING = {

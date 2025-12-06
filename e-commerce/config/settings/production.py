@@ -7,6 +7,8 @@ import os
 import sys
 import logging
 import urllib.parse
+import secrets
+import string
 from datetime import timedelta
 
 from .base import *  # noqa: F401, F403
@@ -19,7 +21,20 @@ except ImportError:
 
 # Override base settings for production
 DEBUG = False  # ALWAYS False in production - never trust environment variables
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-in-production')
+
+# Generate a secure SECRET_KEY if not provided in environment
+# Use environment variable or generate a cryptographically secure random key
+
+_secret_key_env = os.getenv('DJANGO_SECRET_KEY')
+if _secret_key_env and len(_secret_key_env) > 50 and not _secret_key_env.startswith('django-insecure-'):
+    SECRET_KEY = _secret_key_env
+else:
+    # Generate a strong random SECRET_KEY (at least 50 chars with good entropy)
+    # This matches Django's get_random_secret_key() requirements
+    _chars = string.ascii_letters + string.digits + string.punctuation.replace("'", "")
+    SECRET_KEY = ''.join(secrets.choice(_chars) for _ in range(50))
+    if '--debug' in sys.argv:
+        print(f"[PRODUCTION] Generated SECRET_KEY (use in DJANGO_SECRET_KEY env var): {SECRET_KEY}", file=sys.stderr)
 
 # Parse ALLOWED_HOSTS from environment or use wildcard for cloud deployments
 # CRITICAL: Render passes ALLOWED_HOSTS env var but we need to override it for production
@@ -128,25 +143,31 @@ if not DATABASES:
 # Fall back to local memory cache if Redis is not available
 REDIS_URL = os.getenv('REDIS_URL', '')
 
-if REDIS_URL:
-    # If Redis is configured, use it
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': REDIS_URL,
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                'SOCKET_CONNECT_TIMEOUT': 5,
-                'SOCKET_TIMEOUT': 5,
-                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-            },
-            'KEY_PREFIX': 'ecommerce',
-            'TIMEOUT': 3600,  # 1 hour default
+try:
+    if REDIS_URL:
+        # Try to connect to Redis
+        import redis
+        r = redis.from_url(REDIS_URL, socket_connect_timeout=2, socket_timeout=2)
+        r.ping()  # Test connection
+        
+        CACHES = {
+            'default': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': REDIS_URL,
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                    'SOCKET_CONNECT_TIMEOUT': 5,
+                    'SOCKET_TIMEOUT': 5,
+                    'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+                },
+                'KEY_PREFIX': 'ecommerce',
+                'TIMEOUT': 3600,  # 1 hour default
+            }
         }
-    }
-else:
-    # Fall back to in-memory cache for Render without Redis add-on
-    # This is suitable for single-instance deployments
+    else:
+        raise ConnectionError("Redis URL not configured")
+except Exception:
+    # Fall back to in-memory cache if Redis is not available
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -161,21 +182,20 @@ SESSION_CACHE_ALIAS = 'default'
 # ===== SECURITY SETTINGS =====
 # HTTPS/SSL REDIRECT CONFIGURATION
 # 
-# IMPORTANT: SECURE_SSL_REDIRECT is DISABLED (False) because:
-#   1. Render's reverse proxy already handles HTTPS
-#   2. All traffic to Django is already https via the reverse proxy
-#   3. The X-Forwarded-Proto header tells us if the original request was https
-#   4. Enabling SECURE_SSL_REDIRECT would cause redirect loops on Render
+# SECURE_SSL_REDIRECT redirects all HTTP to HTTPS
+# This is safe with reverse proxies (Render, Heroku, AWS ALB) because:
+#   1. Render's reverse proxy receives HTTPS and converts to HTTP internally
+#   2. We trust the X-Forwarded-Proto header from the reverse proxy
+#   3. The reverse proxy adds X-Forwarded-Proto: https for all HTTPS requests
+#   4. Django will redirect HTTP back to HTTPS, but the request already came through HTTPS
 #
-# Instead, we:
-#   - Trust the X-Forwarded-Proto header from the reverse proxy
-#   - Set SECURE_PROXY_SSL_HEADER to let Django know about HTTPS
-#   - Set cookie security flags to ensure secure cookie transmission
-#
-# This is the correct approach for reverse proxy deployments (Render, Heroku, AWS ALB, etc.)
+# With SECURE_PROXY_SSL_HEADER set, Django knows to:
+#   - Check X-Forwarded-Proto header to determine if original request was HTTPS
+#   - Consider it a secure connection if the header says 'https'
+#   - Only redirect insecure requests (rare in production with reverse proxy)
 
-# DO NOT redirect to HTTPS - reverse proxy handles it
-SECURE_SSL_REDIRECT = False
+# Redirect all HTTP to HTTPS in production
+SECURE_SSL_REDIRECT = True
 
 # Trust X-Forwarded-Proto header from Render's reverse proxy
 # This tells Django that the original request was over HTTPS

@@ -7,7 +7,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
 import stripe
-import json
 
 from .models import Payment
 from .serializers import PaymentSerializer
@@ -20,6 +19,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 class CreatePaymentIntentView(generics.GenericAPIView):
     """Create payment intent for Stripe"""
     
+    serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
@@ -36,7 +36,7 @@ class CreatePaymentIntentView(generics.GenericAPIView):
             )
             
             # Create payment record
-            payment, created = Payment.objects.get_or_create(
+            Payment.objects.get_or_create(
                 order=order,
                 defaults={
                     'payment_method': 'stripe',
@@ -57,6 +57,7 @@ class CreatePaymentIntentView(generics.GenericAPIView):
 class ConfirmPaymentView(generics.GenericAPIView):
     """Confirm payment"""
     
+    serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
@@ -121,11 +122,9 @@ def stripe_webhook(request):
     
     # Handle event
     if event['type'] == 'payment_intent.succeeded':
-        payment_intent = event['data']['object']
         # Handle successful payment
         pass
     elif event['type'] == 'payment_intent.payment_failed':
-        payment_intent = event['data']['object']
         # Handle failed payment
         pass
     
@@ -135,6 +134,7 @@ def stripe_webhook(request):
 class StripeWebhookView(APIView):
     """Alternative webhook handler using DRF"""
     
+    serializer_class = PaymentSerializer
     permission_classes = [permissions.AllowAny]
     
     @csrf_exempt

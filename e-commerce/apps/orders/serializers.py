@@ -51,7 +51,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     shipping_address = AddressSerializer(read_only=True)
     billing_address = AddressSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    can_be_cancelled = serializers.ReadOnlyField()
+    can_be_cancelled = serializers.SerializerMethodField(method_name='get_can_be_cancelled')
     
     class Meta:
         model = Order
@@ -65,3 +65,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'id', 'order_number', 'status_display', 'items', 'status_history',
             'created_at', 'updated_at'
         ]
+    
+    def get_can_be_cancelled(self, obj) -> bool:
+        """Check if order can be cancelled."""
+        return obj.can_be_cancelled
