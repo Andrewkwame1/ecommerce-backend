@@ -33,7 +33,11 @@ class UserRegistrationView(APIView):
             )
             
             # Send verification email asynchronously
-            send_verification_email.delay(user.id, str(token.token))
+            try:
+                send_verification_email.delay(user.id, str(token.token))
+            except Exception as e:
+                # Log error but don't fail registration if email sending fails
+                print(f"Warning: Failed to send verification email: {str(e)}")
             
             return Response({
                 'message': 'User registered successfully. Please check your email to verify your account.',
