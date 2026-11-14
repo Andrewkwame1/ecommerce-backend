@@ -103,9 +103,9 @@ if os.getenv('DATABASE_URL'):
             'default': dj_database_url.config(
                 default=os.getenv('DATABASE_URL'),
                 conn_max_age=600,
-                atomic_requests=True
             )
         }
+        DATABASES['default']['ATOMIC_REQUESTS'] = True
     else:
         # Fallback: parse DATABASE_URL manually if dj_database_url not available
         # DATABASE_URL format: postgresql://user:password@host:port/dbname
