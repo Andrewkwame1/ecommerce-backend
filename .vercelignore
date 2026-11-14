@@ -1,0 +1,21 @@
+# Never upload local secrets / local-only artifacts to Vercel.
+# NOTE: .env contains localhost/docker values (ALLOWED_HOSTS=localhost,
+# POSTGRES_HOST=db, ...). Uploading it would override the values you set in the
+# Vercel dashboard and break the deployment.
+.env
+.env.*
+!.env.example
+
+db.sqlite3
+logs/
+media/
+staticfiles/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.git/
+.pytest_cache/
+nginx/
+docker-compose.yml
+Dockerfile
