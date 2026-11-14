@@ -1,0 +1,125 @@
+#!/bin/bash
+# Minikube Setup Script for Linux/Mac
+# This script sets up and verifies a local Kubernetes cluster using Minikube
+
+echo "========================================"
+echo "Minikube Kubernetes Cluster Setup"
+echo "========================================"
+echo ""
+
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Function to check if command exists
+check_command() {
+    if command -v "$1" &> /dev/null; then
+        echo -e "  ${GREEN}✓${NC} $1 is installed"
+        return 0
+    else
+        echo -e "  ${RED}✗${NC} $1 is NOT installed"
+        return 1
+    fi
+}
+
+# Check prerequisites
+echo -e "${YELLOW}Checking prerequisites...${NC}"
+
+PREREQUISITES=("kubectl" "minikube" "docker")
+MISSING=()
+
+for cmd in "${PREREQUISITES[@]}"; do
+    if ! check_command "$cmd"; then
+        MISSING+=("$cmd")
+    fi
+done
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+    echo ""
+    echo -e "${RED}Please install the following tools:${NC}"
+    for cmd in "${MISSING[@]}"; do
+        echo -e "  - $cmd"
+    done
+    echo ""
+    echo -e "${YELLOW}Installation links:${NC}"
+    echo -e "  - kubectl: https://kubernetes.io/docs/tasks/tools/"
+    echo -e "  - minikube: https://minikube.sigs.k8s.io/docs/start/"
+    echo -e "  - Docker: https://docs.docker.com/get-docker/"
+    exit 1
+fi
+
+echo ""
+echo -e "${YELLOW}Starting Minikube cluster...${NC}"
+
+# Check if minikube is already running
+if minikube status &> /dev/null; then
+    STATUS=$(minikube status -o json 2>/dev/null | grep -o '"Host":"[^"]*"' | cut -d'"' -f4)
+    if [ "$STATUS" = "Running" ]; then
+        echo -e "  ${GREEN}✓${NC} Minikube is already running"
+    fi
+else
+    echo -e "  ${YELLOW}Starting Minikube cluster (this may take a few minutes)...${NC}"
+    minikube start --driver=docker --memory=4096 --cpus=2 --disk-size=20g
+    if [ $? -ne 0 ]; then
+        echo -e "  ${RED}✗${NC} Failed to start Minikube"
+        exit 1
+    fi
+    echo -e "  ${GREEN}✓${NC} Minikube cluster started successfully"
+fi
+
+echo ""
+echo -e "${YELLOW}Configuring kubectl context...${NC}"
+minikube kubectl -- config use-context minikube
+echo -e "  ${GREEN}✓${NC} kubectl configured"
+
+echo ""
+echo -e "${YELLOW}Enabling addons...${NC}"
+minikube addons enable ingress
+minikube addons enable metrics-server
+echo -e "  ${GREEN}✓${NC} Ingress addon enabled"
+echo -e "  ${GREEN}✓${NC} Metrics server enabled"
+
+echo ""
+echo -e "${YELLOW}Verifying cluster status...${NC}"
+
+# Get cluster info
+echo ""
+echo -e "${CYAN}Cluster Information:${NC}"
+minikube kubectl -- cluster-info
+
+# Get nodes
+echo ""
+echo -e "${CYAN}Nodes:${NC}"
+minikube kubectl -- get nodes
+
+# Get all pods in kube-system namespace
+echo ""
+echo -e "${CYAN}System Pods (kube-system namespace):${NC}"
+SYSTEM_PODS=$(minikube kubectl -- get pods --namespace=kube-system --output=json 2>/dev/null)
+POD_COUNT=$(echo "$SYSTEM_PODS" | grep -o '"name":"[^"]*"' | wc -l)
+echo -e "  Total pods: $POD_COUNT"
+
+# Wait for all system pods to be ready
+echo ""
+echo -e "${YELLOW}Waiting for all system pods to be ready...${NC}"
+sleep 10
+minikube kubectl -- wait --for=condition=ready pod --all --namespace=kube-system --timeout=120s
+
+echo ""
+echo "========================================"
+echo -e "${GREEN}Setup Complete!${NC}"
+echo "========================================"
+echo ""
+echo -e "${YELLOW}To access the cluster:${NC}"
+echo "  kubectl get pods --all-namespaces"
+echo ""
+echo -e "${YELLOW}To get Minikube IP:${NC}"
+echo "  minikube ip"
+echo ""
+echo -e "${YELLOW}To open dashboard:${NC}"
+echo "  minikube dashboard"
+echo ""
+

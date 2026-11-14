@@ -1,0 +1,102 @@
+services:
+  - type: web
+    name: ecommerce-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r e-commerce/requirements.txt
+    startCommand: cd e-commerce && python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --threads 2 --timeout 120
+    
+    envVars:
+      # Django Settings
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      
+      # Django Security
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      
+      # Database (Render provides DATABASE_URL automatically if PostgreSQL is added)
+      - key: DB_HOST
+        fromService:
+          name: postgres
+          property: host
+      - key: DB_PORT
+        fromService:
+          name: postgres
+          property: port
+      - key: DB_NAME
+        fromService:
+          name: postgres
+          property: database
+      - key: DB_USER
+        fromService:
+          name: postgres
+          property: user
+      - key: DB_PASSWORD
+        fromService:
+          name: postgres
+          property: password
+        sync: false
+      
+      # Redis (if using Redis addon)
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          property: connectionString
+      
+      # CORS & Allowed Hosts
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://${RENDER_EXTERNAL_HOSTNAME}
+      - key: ALLOWED_HOSTS
+        value: ${RENDER_EXTERNAL_HOSTNAME},localhost,127.0.0.1
+      
+      # Email Configuration (update with your email settings)
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      
+      # Payment (Stripe)
+      - key: STRIPE_PUBLIC_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      
+      # Sentry (optional error tracking)
+      - key: SENTRY_DSN
+        sync: false
+
+  # PostgreSQL Database (optional - add if needed)
+  - type: pserv
+    name: postgres
+    env: postgres
+    ipAllowList: []
+    plan: free
+    postgresVersion: "15"
+    
+    envVars:
+      - key: POSTGRES_DB
+        value: ecommerce
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        sync: false
+
+  # Redis Cache (optional - add if needed)
+  - type: pserv
+    name: redis
+    env: redis
+    ipAllowList: []
+    plan: free
+    redisVersion: "7"
