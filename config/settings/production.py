@@ -295,9 +295,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # serverless (read-only FS, no build step guaranteed). Use the non-manifest
 # variant there so a missing manifest degrades to a 404 instead of a 500.
 if ON_VERCEL:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+    STORAGES['staticfiles']['BACKEND'] = 'whitenoise.storage.CompressedStaticFilesStorage'
 else:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STORAGES['staticfiles']['BACKEND'] = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ===== CELERY CONFIGURATION =====
 # Use environment variables if available, but provide safe defaults

@@ -121,7 +121,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Only include static directory if it exists
 STATIC_DIR = BASE_DIR / 'static'
 STATICFILES_DIRS = [str(STATIC_DIR)] if STATIC_DIR.exists() else []
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Media files
 MEDIA_URL = '/media/'

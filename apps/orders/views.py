@@ -73,6 +73,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
             shipping_address=shipping_address,
             billing_address=billing_address
         )
+        serializer.instance = order
         
         # Batch create order items (more efficient than individual creates)
         cart_items = cart.items.select_related('product', 'variant')

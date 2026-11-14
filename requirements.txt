@@ -25,6 +25,7 @@ whitenoise==6.7.0
 celery==5.3.4
 kombu==5.3.4
 amqp==5.2.0
+django-celery-beat==2.6.0
 
 # File Storage
 Pillow==11.0.0
@@ -45,10 +46,6 @@ stripe==7.10.0
 # Security
 cryptography==42.0.0
 PyJWT==2.8.0
-
-# Web Server
-gunicorn==21.2.0
-whitenoise==6.6.0
 
 # Monitoring & Logging
 sentry-sdk==1.39.2

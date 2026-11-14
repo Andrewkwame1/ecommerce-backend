@@ -46,6 +46,8 @@ class OrderListSerializer(serializers.ModelSerializer):
 class OrderDetailSerializer(serializers.ModelSerializer):
     """Serializer for order detail view"""
     
+    shipping_address_id = serializers.UUIDField(write_only=True, required=True)
+    billing_address_id = serializers.UUIDField(write_only=True, required=True)
     items = OrderItemSerializer(many=True, read_only=True)
     status_history = OrderStatusHistorySerializer(many=True, read_only=True)
     shipping_address = AddressSerializer(read_only=True)
@@ -59,11 +61,13 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'id', 'order_number', 'status', 'status_display', 'subtotal',
             'tax', 'shipping_cost', 'discount', 'total_amount', 'shipping_address',
             'billing_address', 'tracking_number', 'shipped_at', 'delivered_at',
-            'notes', 'items', 'status_history', 'can_be_cancelled', 'created_at', 'updated_at'
+            'notes', 'items', 'status_history', 'can_be_cancelled', 'created_at',
+            'updated_at', 'shipping_address_id', 'billing_address_id'
         ]
         read_only_fields = [
-            'id', 'order_number', 'status_display', 'items', 'status_history',
-            'created_at', 'updated_at'
+            'id', 'order_number', 'status', 'status_display', 'subtotal', 'tax',
+            'shipping_cost', 'discount', 'total_amount', 'items', 'status_history',
+            'can_be_cancelled', 'created_at', 'updated_at'
         ]
     
     def get_can_be_cancelled(self, obj) -> bool:
